@@ -16,15 +16,30 @@ The working foundation now includes:
 - explicit truth states (`idea` through `published`);
 - permanent Journey Memory that survives restarts;
 - human-correctable journey records and open-loop retrieval;
-- Recorder, Story Finder, Writer and Security agent interfaces;
-- deterministic secret sanitization and prompt-injection signalling;
-- fail-closed contextual security review;
+- a Universal Session Ingestor for pasted transcripts, message arrays, notes and evidence references;
+- live model-backed Recorder intelligence;
+- live model-backed Story Finder intelligence that may correctly return no story;
+- live model-backed X-first Writer intelligence;
+- live contextual Security Reviewer plus deterministic secret scanning;
+- project-memory context passed into Recorder, Story Finder and Writer;
 - enforced pipeline state machine;
 - human approval tied to an exact draft version;
 - publication queue gating;
-- a Universal Session Ingestor for pasted transcripts, message arrays, notes and evidence references.
+- one `processForContent()` route from real session to secured draft.
 
-The session ingestor deliberately requires an explicit project for now, defaults uncertain work to `in_progress`, defaults sessions to internal unless explicitly content-eligible, and does not infer completion from confident wording alone.
+The system keeps truth state and evidence identity under code control. A model may interpret what happened, but it cannot silently promote planned work into completed work or invent its own evidence.
+
+## What "send this session to Ghost Writer" means
+
+The intended manual trigger now maps to:
+
+**SESSION → INGEST → RECORDER → JOURNEY MEMORY → STORY FINDER → WRITER → SECURITY → WAIT FOR HUMAN APPROVAL**
+
+It still does **not** auto-publish.
+
+## Live intelligence configuration
+
+Keep real credentials outside source control. Copy `.env.example` into your runtime environment and provide `OPENAI_API_KEY` there. The shared model defaults to `gpt-5.6`; each agent role can be overridden independently later if we want a different quality/cost mix.
 
 ## Run checks
 
@@ -35,8 +50,8 @@ npm test
 
 ## Architecture
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/JOURNEY_MEMORY.md`](docs/JOURNEY_MEMORY.md), and [`docs/SESSION_INGESTOR.md`](docs/SESSION_INGESTOR.md).
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/JOURNEY_MEMORY.md`](docs/JOURNEY_MEMORY.md), [`docs/SESSION_INGESTOR.md`](docs/SESSION_INGESTOR.md), and [`docs/LIVE_INTELLIGENCE.md`](docs/LIVE_INTELLIGENCE.md).
 
 ## Next step
 
-Feed a real work session through the ingestor and connect a live model adapter behind the existing Recorder/Story/Writer interfaces so Ghost Writer can turn our real session into its first genuine journey entry and secured X draft.
+Use a real API key to run one of our actual sessions through the new live intelligence path, inspect the Journey/Story/Draft output, and then tune the content-writing behaviour before any publishing integration is enabled.
