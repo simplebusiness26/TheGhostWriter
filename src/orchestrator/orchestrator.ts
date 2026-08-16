@@ -14,7 +14,7 @@ import type {
   StoryFinderAgent,
   WriterAgent
 } from "../agents/contracts.js";
-import { InMemoryStore } from "../memory/in-memory-store.js";
+import type { MemoryStore } from "../memory/store.js";
 import { sanitizeUntrustedText } from "../security/sanitizer.js";
 
 export interface GhostWriterDependencies {
@@ -31,7 +31,7 @@ export class GhostWriterOrchestrator {
   private readonly id: () => string;
 
   constructor(
-    readonly store: InMemoryStore,
+    readonly store: MemoryStore,
     private readonly deps: GhostWriterDependencies
   ) {
     this.now = deps.now ?? (() => new Date().toISOString());
@@ -43,6 +43,7 @@ export class GhostWriterOrchestrator {
     const event: WorkEvent = {
       ...input,
       id: this.id(),
+      rawText: sanitation.content,
       sanitizedText: sanitation.content
     };
 
@@ -52,6 +53,7 @@ export class GhostWriterOrchestrator {
       state: "captured",
       updatedAt: this.now()
     });
+    this.store.persist();
     return event;
   }
 
@@ -68,13 +70,16 @@ export class GhostWriterOrchestrator {
 
     const recorded = await this.deps.recorder.record(event);
     const journeyId = this.id();
+    const timestamp = this.now();
     this.store.journeyEntries.set(journeyId, {
       ...recorded,
       id: journeyId,
-      correctedByHuman: false
+      correctedByHuman: false,
+      createdAt: timestamp,
+      updatedAt: timestamp
     });
-    this.transition(pipeline, "recorded");
     pipeline.journeyEntryId = journeyId;
+    this.transition(pipeline, "recorded");
 
     const story = await this.deps.storyFinder.findStory(this.store.journeyEntries.get(journeyId)!);
     if (!story) {
@@ -257,6 +262,7 @@ export class GhostWriterOrchestrator {
     assertTransition(pipeline.state, next);
     pipeline.state = next;
     pipeline.updatedAt = this.now();
+    this.store.persist();
   }
 
   private requireEvent(eventId: string): WorkEvent {

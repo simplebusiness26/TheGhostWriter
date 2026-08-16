@@ -4,5 +4,8 @@ export * from "./agents/contracts.js";
 export * from "./agents/prompts.js";
 export * from "./agents/demo-agents.js";
 export * from "./security/sanitizer.js";
+export * from "./memory/store.js";
 export * from "./memory/in-memory-store.js";
+export * from "./memory/persistent-store.js";
+export * from "./memory/journey-memory.js";
 export * from "./orchestrator/orchestrator.js";

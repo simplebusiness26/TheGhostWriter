@@ -39,6 +39,12 @@ export interface WorkEvent {
   dedupeKey: string;
 }
 
+export interface JourneyCorrection {
+  correctedBy: string;
+  correctedAt: string;
+  note?: string;
+}
+
 export interface JourneyEntry {
   id: Id;
   projectId: Id;
@@ -49,9 +55,13 @@ export interface JourneyEntry {
   reason?: string;
   result?: string;
   nextStep?: string;
+  lesson?: string;
   truthState: WorkTruthState;
   evidence: EvidenceRef[];
   correctedByHuman: boolean;
+  correction?: JourneyCorrection;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface EvidenceRef {

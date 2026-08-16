@@ -1,13 +1,12 @@
-import type {
-  DraftVersion,
+import type { DraftVersion, JourneyEntry, SecurityFinding, StoryCandidate, WorkEvent } from "../domain/types.js";
+
+export type RecorderOutput = Omit<
   JourneyEntry,
-  SecurityFinding,
-  StoryCandidate,
-  WorkEvent
-} from "../domain/types.js";
+  "id" | "correctedByHuman" | "correction" | "createdAt" | "updatedAt"
+>;
 
 export interface RecorderAgent {
-  record(event: WorkEvent): Promise<Omit<JourneyEntry, "id" | "correctedByHuman">>;
+  record(event: WorkEvent): Promise<RecorderOutput>;
 }
 
 export interface StoryFinderAgent {
@@ -19,8 +18,5 @@ export interface WriterAgent {
 }
 
 export interface ContextualSecurityReviewer {
-  review(content: string): Promise<{
-    safe: boolean;
-    findings: SecurityFinding[];
-  }>;
+  review(content: string): Promise<{ safe: boolean; findings: SecurityFinding[] }>;
 }
