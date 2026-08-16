@@ -8,4 +8,6 @@ export * from "./memory/store.js";
 export * from "./memory/in-memory-store.js";
 export * from "./memory/persistent-store.js";
 export * from "./memory/journey-memory.js";
+export * from "./ingestion/types.js";
+export * from "./ingestion/session-ingestor.js";
 export * from "./orchestrator/orchestrator.js";
