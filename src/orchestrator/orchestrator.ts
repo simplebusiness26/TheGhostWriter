@@ -68,31 +68,44 @@ export class GhostWriterOrchestrator {
       throw new Error(`Event is not ready for processing: ${pipeline.state}`);
     }
 
-    const recorded = await this.deps.recorder.record(event);
+    const previousJourney = this.getProjectTimeline(event.projectId);
+    const recorded = await this.deps.recorder.record(event, {
+      recentJourney: previousJourney.slice(-10)
+    });
     const journeyId = this.id();
     const timestamp = this.now();
-    this.store.journeyEntries.set(journeyId, {
+    const journeyEntry = {
       ...recorded,
       id: journeyId,
       correctedByHuman: false,
       createdAt: timestamp,
       updatedAt: timestamp
-    });
+    };
+    this.store.journeyEntries.set(journeyId, journeyEntry);
     pipeline.journeyEntryId = journeyId;
     this.transition(pipeline, "recorded");
 
-    const story = await this.deps.storyFinder.findStory(this.store.journeyEntries.get(journeyId)!);
+    const projectTimeline = [...previousJourney, journeyEntry];
+    const story = await this.deps.storyFinder.findStory(journeyEntry, {
+      projectTimeline
+    });
     if (!story) {
       this.transition(pipeline, "no_story");
       return { ...pipeline };
     }
 
     const storyId = this.id();
-    this.store.storyCandidates.set(storyId, { ...story, id: storyId });
+    const storyCandidate = { ...story, id: storyId };
+    this.store.storyCandidates.set(storyId, storyCandidate);
     pipeline.storyCandidateId = storyId;
     this.transition(pipeline, "story_candidate");
 
-    const written = await this.deps.writer.write(this.store.storyCandidates.get(storyId)!);
+    const supportingJourney = storyCandidate.journeyEntryIds
+      .map((id) => this.store.journeyEntries.get(id))
+      .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+    const written = await this.deps.writer.write(storyCandidate, {
+      supportingJourney
+    });
     const draftId = this.id();
     const draft: DraftVersion = {
       ...written,
@@ -256,6 +269,12 @@ export class GhostWriterOrchestrator {
         }]
       };
     }
+  }
+
+  private getProjectTimeline(projectId: string) {
+    return [...this.store.journeyEntries.values()]
+      .filter((entry) => entry.projectId === projectId)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   }
 
   private transition(pipeline: PipelineRecord, next: PipelineRecord["state"]): void {
