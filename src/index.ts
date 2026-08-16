@@ -11,3 +11,7 @@ export * from "./memory/journey-memory.js";
 export * from "./ingestion/types.js";
 export * from "./ingestion/session-ingestor.js";
 export * from "./orchestrator/orchestrator.js";
+export * from "./intelligence/openai-responses-client.js";
+export * from "./intelligence/openai-agents.js";
+export * from "./intelligence/content-processor.js";
+export * from "./intelligence/factory.js";
