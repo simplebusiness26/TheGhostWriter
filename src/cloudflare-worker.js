@@ -11,8 +11,7 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/sync") {
       if (!authorized(request, env)) return json({ error: "unauthorized" }, 401);
       try {
-        const result = await syncFromFactory(env);
-        return json({ ok: true, ...result });
+        return json({ ok: true, ...(await syncFromFactory(env)) });
       } catch (error) {
         return json({ ok: false, error: errorMessage(error) }, 500);
       }
@@ -54,14 +53,13 @@ export async function syncFromFactory(env) {
   requireEnv(env);
   await ensureSchema(env.DB);
 
-  const startedAt = new Date().toISOString();
   const summary = {
     pulled: 0,
     stored: 0,
     duplicates: 0,
     consumed: 0,
     failures: 0,
-    startedAt,
+    startedAt: new Date().toISOString(),
     finishedAt: null,
     errors: []
   };
@@ -140,8 +138,11 @@ export async function syncFromFactory(env) {
 
 export async function ensureSchema(db) {
   if (!db) throw new Error("D1 binding DB is required");
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS ghostwriter_memory (
+
+  // D1 exec can split raw SQL on newlines. Use prepared statements in a batch so
+  // multiline CREATE TABLE statements are never parsed as incomplete fragments.
+  await db.batch([
+    db.prepare(`CREATE TABLE IF NOT EXISTS ghostwriter_memory (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       bridge_id INTEGER NOT NULL UNIQUE,
       project_id TEXT NOT NULL,
@@ -158,12 +159,12 @@ export async function ensureSchema(db) {
       received_at TEXT NOT NULL,
       consumed_at TEXT,
       status TEXT NOT NULL DEFAULT 'captured'
-    );
-    CREATE INDEX IF NOT EXISTS idx_ghostwriter_memory_project
-      ON ghostwriter_memory(project_id, received_at DESC);
-    CREATE INDEX IF NOT EXISTS idx_ghostwriter_memory_status
-      ON ghostwriter_memory(status, received_at DESC);
-    CREATE TABLE IF NOT EXISTS ghostwriter_sync_runs (
+    )`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_ghostwriter_memory_project
+      ON ghostwriter_memory(project_id, received_at DESC)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_ghostwriter_memory_status
+      ON ghostwriter_memory(status, received_at DESC)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS ghostwriter_sync_runs (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       started_at TEXT NOT NULL,
       finished_at TEXT NOT NULL,
@@ -173,8 +174,8 @@ export async function ensureSchema(db) {
       consumed INTEGER NOT NULL,
       failures INTEGER NOT NULL,
       errors_json TEXT NOT NULL DEFAULT '[]'
-    );
-  `);
+    )`)
+  ]);
 }
 
 async function storePacket(db, packet) {
