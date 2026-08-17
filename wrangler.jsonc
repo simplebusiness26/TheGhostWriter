@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "ghost-writer-receiver",
+  "main": "src/cloudflare-worker.js",
+  "compatibility_date": "2026-08-17",
+  "keep_vars": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "AI_FACTORY_URL": "https://ai-factory.simplebussiness26.workers.dev"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB"
+    }
+  ],
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  }
+}
