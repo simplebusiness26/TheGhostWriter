@@ -112,12 +112,17 @@ test("does not acknowledge a packet when ingestion fails", async () => {
   const client = new AiFactoryBridgeClient({
     baseUrl: "https://factory.example.test",
     apiKey: "test-write-key",
-    fetchImpl: fakeFetch([queuedPacket({ text: "   " })], calls)
+    fetchImpl: fakeFetch([queuedPacket()], calls)
   });
-  const { ingestor } = makeIngestor();
+  const failingIngestor = {
+    ingest() {
+      throw new Error("simulated ingestion failure");
+    }
+  };
 
-  const result = await client.pullInto(ingestor);
+  const result = await client.pullInto(failingIngestor);
   assert.equal(result.failed.length, 1);
+  assert.match(result.failed[0].error, /simulated ingestion failure/);
   assert.equal(result.consumed, 0);
   assert.equal(calls.filter((call) => call.url.includes("/consume")).length, 0);
 });
