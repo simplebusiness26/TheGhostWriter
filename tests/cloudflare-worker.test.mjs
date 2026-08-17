@@ -12,6 +12,10 @@ class FakeDb {
     return { count: 0, duration: 0 };
   }
 
+  async batch(statements) {
+    return Promise.all(statements.map((statement) => statement.run()));
+  }
+
   prepare(sql) {
     return new FakeStatement(this, sql);
   }
