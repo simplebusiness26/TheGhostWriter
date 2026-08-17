@@ -1,12 +1,12 @@
 import type { UniversalSessionInput, SessionIngestionResult } from "../ingestion/types.js";
 import type { UniversalSessionIngestor } from "../ingestion/session-ingestor.js";
 
-export type FetchLike = typeof fetch;
+export type AiFactoryFetchLike = typeof fetch;
 
 export interface AiFactoryBridgeClientConfig {
   baseUrl: string;
   apiKey: string;
-  fetchImpl?: FetchLike;
+  fetchImpl?: AiFactoryFetchLike;
 }
 
 export interface AiFactoryQueuedPacket extends UniversalSessionInput {
@@ -30,7 +30,7 @@ export interface AiFactoryPullResult {
 export class AiFactoryBridgeClient {
   private readonly baseUrl: string;
   private readonly apiKey: string;
-  private readonly fetchImpl: FetchLike;
+  private readonly fetchImpl: AiFactoryFetchLike;
 
   constructor(config: AiFactoryBridgeClientConfig) {
     this.baseUrl = normalizeBaseUrl(config.baseUrl);
