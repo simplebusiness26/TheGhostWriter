@@ -1,0 +1,40 @@
+name: Ghost Writer first live session
+
+on:
+  push:
+    branches:
+      - agent/phase-1-agent-foundation
+    paths:
+      - scripts/live-first-session.mjs
+      - .github/workflows/live-first-session.yml
+
+jobs:
+  live-session:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GHOSTWRITER_MODEL: gpt-5.6
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Ghost Writer
+        run: npm run build
+
+      - name: Verify API secret exists
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY is not available to this workflow."
+            exit 1
+          fi
+
+      - name: Run first real session
+        run: node scripts/live-first-session.mjs
