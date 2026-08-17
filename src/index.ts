@@ -10,4 +10,5 @@ export * from "./memory/persistent-store.js";
 export * from "./memory/journey-memory.js";
 export * from "./ingestion/types.js";
 export * from "./ingestion/session-ingestor.js";
+export * from "./integration/ai-factory-bridge.js";
 export * from "./orchestrator/orchestrator.js";
