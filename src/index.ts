@@ -15,3 +15,4 @@ export * from "./intelligence/openai-responses-client.js";
 export * from "./intelligence/openai-agents.js";
 export * from "./intelligence/content-processor.js";
 export * from "./intelligence/factory.js";
+export * from "./integration/ai-factory-bridge.js";
