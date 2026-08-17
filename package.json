@@ -1,0 +1,20 @@
+{
+  "name": "the-ghost-writer",
+  "version": "0.2.1",
+  "private": true,
+  "description": "Agent-first engine that turns real work into safe, human-approved content.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "check": "npm run test",
+    "bridge:pull": "npm run build && node scripts/pull-ai-factory.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
