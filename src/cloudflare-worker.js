@@ -49,6 +49,45 @@ export default {
   }
 };
 
+export async function fetchQueuePackets(env) {
+  const baseUrl = normalizeBaseUrl(env.AI_FACTORY_URL);
+  const requestOptions = {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      "x-ai-factory-key": env.AI_FACTORY_KEY
+    }
+  };
+
+  const queueResponse = await fetch(`${baseUrl}/api/ghostwriter-bridge/queue`, requestOptions);
+  if (queueResponse.ok) {
+    const payload = await queueResponse.json();
+    if (!payload || !Array.isArray(payload.packets)) {
+      throw new Error("AI Factory returned an invalid bridge queue payload");
+    }
+    return payload.packets;
+  }
+
+  if (queueResponse.status !== 404) {
+    throw new Error(`AI Factory queue request failed: HTTP ${queueResponse.status}`);
+  }
+
+  const fallbackResponse = await fetch(`${baseUrl}/api/ghostwriter-bridge?status=queued`, requestOptions);
+  if (!fallbackResponse.ok) {
+    throw new Error(`AI Factory bridge fallback request failed: HTTP ${fallbackResponse.status}`);
+  }
+
+  const fallbackPayload = await fallbackResponse.json();
+  if (!fallbackPayload || !Array.isArray(fallbackPayload.events)) {
+    throw new Error("AI Factory returned an invalid bridge fallback payload");
+  }
+
+  return fallbackPayload.events.map((event) => ({
+    bridgeId: event.id,
+    ...(event.packet && typeof event.packet === "object" ? event.packet : {})
+  }));
+}
+
 export async function syncFromFactory(env) {
   requireEnv(env);
   await ensureSchema(env.DB);
@@ -65,26 +104,10 @@ export async function syncFromFactory(env) {
   };
 
   try {
-    const queueResponse = await fetch(`${normalizeBaseUrl(env.AI_FACTORY_URL)}/api/ghostwriter-bridge/queue`, {
-      method: "GET",
-      headers: {
-        accept: "application/json",
-        "x-ai-factory-key": env.AI_FACTORY_KEY
-      }
-    });
+    const packets = await fetchQueuePackets(env);
+    summary.pulled = packets.length;
 
-    if (!queueResponse.ok) {
-      throw new Error(`AI Factory queue request failed: HTTP ${queueResponse.status}`);
-    }
-
-    const payload = await queueResponse.json();
-    if (!payload || !Array.isArray(payload.packets)) {
-      throw new Error("AI Factory returned an invalid bridge queue payload");
-    }
-
-    summary.pulled = payload.packets.length;
-
-    for (const rawPacket of payload.packets) {
+    for (const rawPacket of packets) {
       let packet;
       try {
         packet = validatePacket(rawPacket);
@@ -139,8 +162,6 @@ export async function syncFromFactory(env) {
 export async function ensureSchema(db) {
   if (!db) throw new Error("D1 binding DB is required");
 
-  // D1 exec can split raw SQL on newlines. Use prepared statements in a batch so
-  // multiline CREATE TABLE statements are never parsed as incomplete fragments.
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS ghostwriter_memory (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
