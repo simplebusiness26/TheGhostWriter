@@ -1,11 +1,11 @@
 import receiver from './cloudflare-worker.js';
 
-const DEFAULT_AI_FACTORY_URL = 'https://ai-factory.simplebussiness26.workers.dev';
+const CANONICAL_AI_FACTORY_URL = 'https://ai-factory.simplebussiness26.workers.dev';
 
 function runtimeEnv(env) {
   return {
     ...env,
-    AI_FACTORY_URL: String(env?.AI_FACTORY_URL || DEFAULT_AI_FACTORY_URL).trim()
+    AI_FACTORY_URL: CANONICAL_AI_FACTORY_URL
   };
 }
 
@@ -26,7 +26,7 @@ async function withSyncDiagnostics(response, env) {
     }
 
     return Response.json(
-      { ...payload, lastSyncErrors: errors },
+      { ...payload, aiFactoryHost: new URL(CANONICAL_AI_FACTORY_URL).host, lastSyncErrors: errors },
       { status: response.status, headers: { 'cache-control': 'no-store' } }
     );
   } catch {
