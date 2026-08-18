@@ -9,9 +9,42 @@ function runtimeEnv(env) {
   };
 }
 
+async function withSyncDiagnostics(response, env) {
+  if (!env?.DB) return response;
+
+  try {
+    const payload = await response.clone().json();
+    const latest = await env.DB.prepare(
+      `SELECT errors_json FROM ghostwriter_sync_runs ORDER BY id DESC LIMIT 1`
+    ).first();
+
+    let errors = [];
+    try {
+      errors = JSON.parse(latest?.errors_json || '[]');
+    } catch {
+      errors = [{ bridgeId: null, error: 'Stored sync error could not be parsed.' }];
+    }
+
+    return Response.json(
+      { ...payload, lastSyncErrors: errors },
+      { status: response.status, headers: { 'cache-control': 'no-store' } }
+    );
+  } catch {
+    return response;
+  }
+}
+
 export default {
-  fetch(request, env, ctx) {
-    return receiver.fetch(request, runtimeEnv(env), ctx);
+  async fetch(request, env, ctx) {
+    const liveEnv = runtimeEnv(env);
+    const response = await receiver.fetch(request, liveEnv, ctx);
+    const url = new URL(request.url);
+
+    if (request.method === 'GET' && url.pathname === '/health') {
+      return withSyncDiagnostics(response, liveEnv);
+    }
+
+    return response;
   },
 
   scheduled(controller, env, ctx) {
