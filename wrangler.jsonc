@@ -3,6 +3,7 @@
   "name": "ghost-writer-receiver",
   "main": "src/cloudflare-entry.js",
   "compatibility_date": "2026-08-17",
+  "compatibility_flags": ["global_fetch_strictly_public"],
   "keep_vars": true,
   "observability": {
     "enabled": true,
@@ -11,6 +12,12 @@
   "vars": {
     "AI_FACTORY_URL": "https://ai-factory.simplebussiness26.workers.dev"
   },
+  "services": [
+    {
+      "binding": "AI_FACTORY",
+      "service": "ai-factory"
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB"
