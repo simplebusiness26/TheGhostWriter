@@ -1,7 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "ghost-writer-receiver",
-  "main": "src/cloudflare-entry.js",
+  "main": "src/os-entry.js",
   "compatibility_date": "2026-08-17",
   "compatibility_flags": ["global_fetch_strictly_public"],
   "keep_vars": true,
